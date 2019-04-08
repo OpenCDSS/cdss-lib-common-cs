@@ -66,7 +66,7 @@ NoticeEnd */
 
 namespace RTi.Util.IO
 {
-	/// <summary>
+    /// <summary>
 	/// This class provides a way to generically store property information and can
 	/// be used similar to Java properties, environment variables, etc.  The main
 	/// difference is that it allows the contents of a property to be an Object, which
@@ -90,373 +90,281 @@ namespace RTi.Util.IO
 	/// <seealso cref= PropList </seealso>
 	/// <seealso cref= PropListManager </seealso>
 	public class Prop : IComparable<Prop>
-	{
+    {
+        /**
+        Indicates that it is unknown how the property was set (this is the default).
+        */
+        public static int SET_UNKNOWN = 0;
 
-	/// <summary>
-	/// Indicates that it is unknown how the property was set (this is the default).
-	/// </summary>
-	public const int SET_UNKNOWN = 0;
+        /**
+        Indicates that the property was set from a file or database.  In this case,
+        when a PropList is saved, the property should typically be saved.
+        */
+        public static int SET_FROM_PERSISTENT = 1;
 
-	/// <summary>
-	/// Indicates that the property was set from a file or database.  In this case,
-	/// when a PropList is saved, the property should typically be saved.
-	/// </summary>
-	public const int SET_FROM_PERSISTENT = 1;
+        /**
+        Indicates whether property is read from a persistent source, set internally as a
+        run-time default, or is set at runtime by the user.
+        */
+        private int __howSet;
 
-	/// <summary>
-	/// Indicates that the property was set at run-time as a default value.  In this
-	/// case, when a PropList is saved, the property often may be ignored because it
-	/// will be set to the same default value the next time.
-	/// </summary>
-	public const int SET_AS_RUNTIME_DEFAULT = 2;
+        /**
+        Integer key for faster lookups.
+        */
+        private int __intKey;
 
-	/// <summary>
-	/// Indicates that the property was set by the user at run-time.  In this case,
-	/// when a PropList is saved, the property should likely be saved because the user
-	/// has specified a value different from internal defaults.
-	/// </summary>
-	public const int SET_AT_RUNTIME_BY_USER = 3;
+        /**
+        Indicate whether the property is a literal string.
+        By default the property is a normal property.
+        */
+        private bool __isLiteral = false;
 
-	/// <summary>
-	/// Indicates that the property was automatically set for the user at run-time.  In
-	/// this case, when a PropList is saved, the property should likely be saved because
-	/// the user the property is considered important in defining something.  However,
-	/// for all practical purposes, it is a run-time default and, in and of itself,
-	/// should not force the user to save.
-	/// </summary>
-	public const int SET_AT_RUNTIME_FOR_USER = 4;
+        /**
+        String to look up property.
+        */
+        private string __key;
 
-	/// <summary>
-	/// Indicates that the property was set behind the scenes in a way that should be
-	/// invisible to the user.  Users cannot edit hidden properties, will never see
-	/// hidden properties, and should never be able to save hidden properties to a persistent source.
-	/// </summary>
-	public const int SET_HIDDEN = 5;
+        /**
+        Contents of property (anything derived from Object).  This may be a string or another
+        object.  If a string, it contains the value before expanding wildcards, etc.
+        */
+        private Object __contents;
+        /**
+        Value of the object as a string.  In most cases, the object will be a string.  The
+        value is the fully-expanded string (wildcards and other variables are expanded).  If not
+        a string, this may contain the toString() representation.
+        */
+        private string __value;
 
-	/// <summary>
-	/// Indicates whether property is read from a persistent source, set internally as a
-	/// run-time default, or is set at runtime by the user.
-	/// </summary>
-	private int __howSet;
-	/// <summary>
-	/// Integer key for faster lookups.
-	/// </summary>
-	private int __intKey;
-	/// <summary>
-	/// Indicate whether the property is a literal string.
-	/// By default the property is a normal property.
-	/// </summary>
-	private bool __isLiteral = false;
-	/// <summary>
-	/// String to look up property.
-	/// </summary>
-	private string __key;
-	/// <summary>
-	/// Contents of property (anything derived from Object).  This may be a string or another
-	/// object.  If a string, it contains the value before expanding wildcards, etc.
-	/// </summary>
-	private object __contents;
-	/// <summary>
-	/// Value of the object as a string.  In most cases, the object will be a string.  The
-	/// value is the fully-expanded string (wildcards and other variables are expanded).  If not
-	/// a string, this may contain the toString() representation.
-	/// </summary>
-	private string __value;
+        /// <summary>
+        /// Construct a property having no key and no object (not very useful!).
+        /// </summary>
+        public Prop()
+        {
+            initialize(SET_UNKNOWN, 0, "", null, null);
+        }
 
-	/// <summary>
-	/// Construct a property having no key and no object (not very useful!).
-	/// </summary>
-	public Prop()
-	{
-		initialize(SET_UNKNOWN, 0, "", null, null);
-	}
+        /// <summary>
+        /// Construct using a string key and a string. </summary>
+        /// <param name="key"> String to use as key to look up property. </param>
+        /// <param name="contents"> The contents of the property (in this case the same as the value. </param>
+        public Prop(string key, string contents)
+        { // Contents and value are the same.
+            initialize(SET_UNKNOWN, 0, key, contents, contents);
+        }
 
-	/// <summary>
-	/// Construct using a string key and a string. </summary>
-	/// <param name="key"> String to use as key to look up property. </param>
-	/// <param name="contents"> The contents of the property (in this case the same as the value. </param>
-	public Prop(string key, string contents)
-	{ // Contents and value are the same.
-		initialize(SET_UNKNOWN, 0, key, contents, contents);
-	}
+        /// <summary>
+        /// Construct using a string key, and both contents and string value. </summary>
+        /// <param name="key"> String to use as key to look up property. </param>
+        /// <param name="contents"> The contents of the property (in this case the same as the </param>
+        /// <param name="value"> The value of the property as a string. </param>
+        public Prop(string key, object contents, string value)
+        { // Contents and string are different...
+            initialize(SET_UNKNOWN, 0, key, contents, value);
+        }
 
-	/// <summary>
-	/// Construct using a string key, and both contents and string value. </summary>
-	/// <param name="key"> String to use as key to look up property. </param>
-	/// <param name="contents"> The contents of the property (in this case the same as the </param>
-	/// <param name="value"> The value of the property as a string. </param>
-	public Prop(string key, object contents, string value)
-	{ // Contents and string are different...
-		initialize(SET_UNKNOWN, 0, key, contents, value);
-	}
+        /// <summary>
+        /// Construct using a string key, and both contents and string value. </summary>
+        /// <param name="key"> String to use as key to look up property. </param>
+        /// <param name="contents"> The contents of the property (in this case the same as the </param>
+        /// <param name="value"> The value of the property as a string. </param>
+        /// <param name="howSet"> Indicates how the property is being set. </param>
+        public Prop(string key, object contents, string value, int howSet)
+        { // Contents and string are different...
+            initialize(howSet, 0, key, contents, value);
+        }
 
-	/// <summary>
-	/// Construct using a string key, and both contents and string value. </summary>
-	/// <param name="key"> String to use as key to look up property. </param>
-	/// <param name="contents"> The contents of the property (in this case the same as the </param>
-	/// <param name="value"> The value of the property as a string. </param>
-	/// <param name="howSet"> Indicates how the property is being set. </param>
-	public Prop(string key, object contents, string value, int howSet)
-	{ // Contents and string are different...
-		initialize(howSet, 0, key, contents, value);
-	}
+        /// <summary>
+        /// Construct using a string key, an integer key, and string contents. </summary>
+        /// <param name="key"> String to use as key to look up property. </param>
+        /// <param name="intkey"> Integer to use to look up the property (integer keys can be used
+        /// in place of strings for lookups). </param>
+        /// <param name="contents"> The contents of the property (in this case the same as the </param>
+        public Prop(string key, int intkey, string contents)
+        {
+            initialize(SET_UNKNOWN, intkey, key, contents, contents);
+        }
 
-	/// <summary>
-	/// Construct using a string key, an integer key, and string contents. </summary>
-	/// <param name="key"> String to use as key to look up property. </param>
-	/// <param name="intkey"> Integer to use to look up the property (integer keys can be used
-	/// in place of strings for lookups). </param>
-	/// <param name="contents"> The contents of the property (in this case the same as the </param>
-	public Prop(string key, int intkey, string contents)
-	{
-		initialize(SET_UNKNOWN, intkey, key, contents, contents);
-	}
+        /// <summary>
+        /// Construct using a string key, an integer key, and both contents and value. </summary>
+        /// <param name="key"> String to use as key to look up property. </param>
+        /// <param name="intKey"> Integer to use to look up the property (integer keys can be used in place of strings for lookups). </param>
+        /// <param name="contents"> The contents of the property. </param>
+        /// <param name="value"> The string value of the property. </param>
+        public Prop(string key, int intKey, object contents, string value)
+        {
+            initialize(SET_UNKNOWN, intKey, key, contents, value);
+        }
 
-	/// <summary>
-	/// Construct using a string key, an integer key, and both contents and value. </summary>
-	/// <param name="key"> String to use as key to look up property. </param>
-	/// <param name="intKey"> Integer to use to look up the property (integer keys can be used in place of strings for lookups). </param>
-	/// <param name="contents"> The contents of the property. </param>
-	/// <param name="value"> The string value of the property. </param>
-	public Prop(string key, int intKey, object contents, string value)
-	{
-		initialize(SET_UNKNOWN, intKey, key, contents, value);
-	}
+        /// <summary>
+        /// Construct using a string key, an integer key, and both contents and value. </summary>
+        /// <param name="key"> String to use as key to look up property. </param>
+        /// <param name="intKey"> Integer to use to look up the property (integer keys can be used in place of strings for lookups). </param>
+        /// <param name="contents"> The contents of the property. </param>
+        /// <param name="value"> The string value of the property. </param>
+        /// <param name="howSet"> Indicates how the property is being set. </param>
+        public Prop(string key, int intKey, object contents, string value, int howSet)
+        {
+            initialize(howSet, intKey, key, contents, value);
+        }
 
-	/// <summary>
-	/// Construct using a string key, an integer key, and both contents and value. </summary>
-	/// <param name="key"> String to use as key to look up property. </param>
-	/// <param name="intKey"> Integer to use to look up the property (integer keys can be used in place of strings for lookups). </param>
-	/// <param name="contents"> The contents of the property. </param>
-	/// <param name="value"> The string value of the property. </param>
-	/// <param name="howSet"> Indicates how the property is being set. </param>
-	public Prop(string key, int intKey, object contents, string value, int howSet)
-	{
-		initialize(howSet, intKey, key, contents, value);
-	}
+        /// <summary>
+        /// Construct using a string key, an integer key, string contents, and specify modifier flags. </summary>
+        /// <param name="key"> String to use as key to look up property. </param>
+        /// <param name="intKey"> Integer to use to look up the property (integer keys can be used in place of strings for lookups). </param>
+        /// <param name="contents"> The contents of the property (in this case the same as the value. </param>
+        /// <param name="howSet"> Indicates how the property is being set (see SET_*). </param>
+        public Prop(string key, int intKey, string contents, int howSet)
+        {
+            initialize(howSet, intKey, key, contents, contents);
+        }
 
-	/// <summary>
-	/// Construct using a string key, an integer key, string contents, and specify modifier flags. </summary>
-	/// <param name="key"> String to use as key to look up property. </param>
-	/// <param name="intKey"> Integer to use to look up the property (integer keys can be used in place of strings for lookups). </param>
-	/// <param name="contents"> The contents of the property (in this case the same as the value. </param>
-	/// <param name="howSet"> Indicates how the property is being set (see SET_*). </param>
-	public Prop(string key, int intKey, string contents, int howSet)
-	{
-		initialize(howSet, intKey, key, contents, contents);
-	}
+        /// <summary>
+        /// Return the contents (Object) for the property. </summary>
+        /// <returns> The contents (Object) for the property (note: the original is returned, not a copy). </returns>
+        public object getContents()
+        {
+            return __contents;
+        }
 
-	/// <summary>
-	/// Used to compare this Prop to another Prop in order to sort them.  Inherited from Comparable interface. </summary>
-	/// <param name="o"> the Prop to compare against. </param>
-	/// <returns> 0 if the Props' keys and values are the same, or -1 if this Prop sorts
-	/// earlier than the other Prop, or 1 if this Prop sorts higher than the other Prop. </returns>
-	public virtual int CompareTo(Prop p)
-	{
-		int result = 0;
+        /// <summary>
+        /// Return the string key for the property. </summary>
+        /// <returns> The string key for the property. </returns>
+        public string getKey()
+        {
+            return __key;
+        }
 
-		result = __key.CompareTo(p.getKey());
-		if (result != 0)
-		{
-			return result;
-		}
+        /// <summary>
+        /// Return the string value for the property. </summary>
+        /// <returns> The string value for the property. </returns>
+        public string getValue()
+        {
+            return __value;
+        }
 
-		result = __value.CompareTo(p.getValue());
-		return result;
-	}
+        /**
+        Return the string value for the property expanding the contents if necessary.
+        @param props PropList to search.
+        @return The string value for the property.
+        */
+        public string getValue(PropList props)
+        {   // This will expand contents if necessary...
+            refresh(props);
+            return __value;
+        }
 
-	/// <summary>
-	/// Finalize before garbage collection. </summary>
-	/// <exception cref="Throwable"> if there is an error. </exception>
-//JAVA TO C# CONVERTER WARNING: Method 'throws' clauses are not available in .NET:
-//ORIGINAL LINE: protected void finalize() throws Throwable
-	~Prop()
-	{
-		__key = null;
-		__contents = null;
-		__value = null;
-//JAVA TO C# CONVERTER NOTE: The base class finalizer method is automatically called in C#:
-//		base.finalize();
-	}
+        /// <summary>
+        /// Initialize member data.
+        /// </summary>
+        private void initialize(int howSet, int intKey, string key, object contents, string value)
+        {
+            __howSet = howSet;
+            __intKey = intKey;
+            if (string.ReferenceEquals(key, null))
+            {
+                __key = "";
+            }
+            else
+            {
+                __key = key;
+            }
+            __contents = contents;
+            if (string.ReferenceEquals(value, null))
+            {
+                __value = "";
+            }
+            else
+            {
+                __value = value;
+            }
+        }
 
-	/// <summary>
-	/// Return the contents (Object) for the property. </summary>
-	/// <returns> The contents (Object) for the property (note: the original is returned, not a copy). </returns>
-	public virtual object getContents()
-	{
-		return __contents;
-	}
+        /// <summary>
+        /// Refresh the contents by resetting the value by expanding the contents. </summary>
+        /// <param name="props"> PropList to search. </param>
+        /// <returns> The string value for the property. </returns>
+        public virtual void refresh(PropList props)
+        {
+            int persistent_format = props.getPersistentFormat();
+            if ((persistent_format == PropList.FORMAT_MAKEFILE) || (persistent_format == PropList.FORMAT_NWSRFS) || (persistent_format == PropList.FORMAT_PROPERTIES))
+            {
+                // Try to expand the contents...
+                if (__contents is string)
+                {
+                    __value = PropListManager.resolveContentsValue(props, (string)__contents);
+                }
+            }
+        }
 
-	/// <summary>
-	/// Return the way that the property was set (see SET_*). </summary>
-	/// <returns> the way that the property was set. </returns>
-	public virtual int getHowSet()
-	{
-		return __howSet;
-	}
+        /// <summary>
+        /// Set the contents for a property. </summary>
+        /// <param name="contents"> The contents of a property as an Object. </param>
+        public virtual void setContents(object contents)
+        { // Use a reference here (do we need a copy?)...
 
-	/// <summary>
-	/// Return the integer key for the property. </summary>
-	/// <returns> The integer key for the property. </returns>
-	public virtual int getIntKey()
-	{
-		return __intKey;
-	}
+            if (contents != null)
+            {
+                __contents = contents;
+            }
+        }
 
-	/// <summary>
-	/// Return whether the property is a literal string.  If true the string contents can be
-	/// output as is to represent the persistent format of the data, without the key.  For example, the
-	/// property might be Literal1 = "# Some comment in the file.". </summary>
-	/// <returns> true if the property is a literal string, false if not. </returns>
-	public virtual bool getIsLiteral()
-	{
-		return __isLiteral;
-	}
+        /// <summary>
+        /// Set how the property is being set (see SET_*).
+        /// Set how the property is being set.
+        /// </summary>
+        public virtual void setHowSet(int how_set)
+        {
+            __howSet = how_set;
+        }
 
-	/// <summary>
-	/// Return the string key for the property. </summary>
-	/// <returns> The string key for the property. </returns>
-	public virtual string getKey()
-	{
-		return __key;
-	}
+        /// <summary>
+        /// Set the string key for the property. </summary>
+        /// <param name="key"> String key for the property. </param>
+        public virtual void setKey(string key)
+        {
+            if (!string.ReferenceEquals(key, null))
+            {
+                __key = key;
+            }
+        }
 
-	/// <summary>
-	/// Return the string value for the property. </summary>
-	/// <returns> The string value for the property. </returns>
-	public virtual string getValue()
-	{
-		return __value;
-	}
+        /// <summary>
+        /// Set the string value for the property. </summary>
+        /// <param name="value"> The string value for the property. </param>
+        public virtual void setValue(string value)
+        {
+            if (!string.ReferenceEquals(value, null))
+            {
+                __value = value;
+            }
+        }
 
-	/// <summary>
-	/// Return the string value for the property expanding the contents if necessary. </summary>
-	/// <param name="props"> PropList to search. </param>
-	/// <returns> The string value for the property. </returns>
-	public virtual string getValue(PropList props)
-	{ // This will expand contents if necessary...
-		refresh(props);
-		return __value;
-	}
+        /// <summary>
+        /// Indicate whether the property is a literal string. </summary>
+        /// <param name="isLiteral"> true if the property is a literal string, false if a normal property. </param>
+        public void SetIsLiteral(bool isLiteral)
+        {
+            __isLiteral = isLiteral;
+        }
 
-	/// <summary>
-	/// Initialize member data.
-	/// </summary>
-	private void initialize(int howSet, int intKey, string key, object contents, string value)
-	{
-		__howSet = howSet;
-		__intKey = intKey;
-		if (string.ReferenceEquals(key, null))
-		{
-			__key = "";
-		}
-		else
-		{
-			__key = key;
-		}
-		__contents = contents;
-		if (string.ReferenceEquals(value, null))
-		{
-			__value = "";
-		}
-		else
-		{
-			__value = value;
-		}
-	}
+        /// <summary>
+        /// Used to compare this Prop to another Prop in order to sort them.  Inherited from Comparable interface. </summary>
+        /// <param name="o"> the Prop to compare against. </param>
+        /// <returns> 0 if the Props' keys and values are the same, or -1 if this Prop sorts
+        /// earlier than the other Prop, or 1 if this Prop sorts higher than the other Prop. </returns>
+        public virtual int CompareTo(Prop p)
+        {
+            int result = 0;
 
-	/// <summary>
-	/// Refresh the contents by resetting the value by expanding the contents. </summary>
-	/// <param name="props"> PropList to search. </param>
-	/// <returns> The string value for the property. </returns>
-	public virtual void refresh(PropList props)
-	{
-		int persistent_format = props.getPersistentFormat();
-		 if ((persistent_format == PropList.FORMAT_MAKEFILE) || (persistent_format == PropList.FORMAT_NWSRFS) || (persistent_format == PropList.FORMAT_PROPERTIES))
-		 {
-			// Try to expand the contents...
-			if (__contents is string)
-			{
-				__value = PropListManager.resolveContentsValue(props,(string)__contents);
-			}
-		 }
-	}
+            result = __key.CompareTo(p.getKey());
+            if (result != 0)
+            {
+                return result;
+            }
 
-	/// <summary>
-	/// Set the contents for a property. </summary>
-	/// <param name="contents"> The contents of a property as an Object. </param>
-	public virtual void setContents(object contents)
-	{ // Use a reference here (do we need a copy?)...
-
-		if (contents != null)
-		{
-			__contents = contents;
-		}
-	}
-
-	/// <summary>
-	/// Set how the property is being set (see SET_*).
-	/// Set how the property is being set.
-	/// </summary>
-	public virtual void setHowSet(int how_set)
-	{
-		__howSet = how_set;
-	}
-
-	/// <summary>
-	/// Set the integer key for the property.  This is usually maintained by PropList. </summary>
-	/// <param name="intkey"> Integer key for the property. </param>
-	/// <seealso cref= PropList </seealso>
-	public virtual void setIntKey(int intkey)
-	{
-		__intKey = intkey;
-	}
-
-	/// <summary>
-	/// Indicate whether the property is a literal string. </summary>
-	/// <param name="isLiteral"> true if the property is a literal string, false if a normal property. </param>
-	public virtual void setIsLiteral(bool isLiteral)
-	{
-		__isLiteral = isLiteral;
-	}
-
-	/// <summary>
-	/// Set the string key for the property. </summary>
-	/// <param name="key"> String key for the property. </param>
-	public virtual void setKey(string key)
-	{
-		if (!string.ReferenceEquals(key, null))
-		{
-			__key = key;
-		}
-	}
-
-	/// <summary>
-	/// Set the string value for the property. </summary>
-	/// <param name="value"> The string value for the property. </param>
-	public virtual void setValue(string value)
-	{
-		if (!string.ReferenceEquals(value, null))
-		{
-			__value = value;
-		}
-	}
-
-	/// <summary>
-	/// Return a string representation of the property (a verbose output). </summary>
-	/// <returns> a string representation of the property. </returns>
-	public override string ToString()
-	{
-		if (getIsLiteral())
-		{
-			return __value;
-		}
-		else
-		{
-			return "Key=\"" + __key + "\" (" + __intKey + "), value = \"" + __value + "\" _how_set= " + __howSet;
-		}
-	}
-
-	}
-
+            result = __value.CompareTo(p.getValue());
+            return result;
+        }
+    }
 }

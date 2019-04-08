@@ -31,32 +31,33 @@ NoticeEnd */
 
 namespace RTi.Util.IO
 {
-    /// <summary>
+	/// <summary>
 	/// This ProcessListener interface can be implemented by classes that need to
 	/// listen for output from an external process, as controlled by the ProcessManager.
 	/// This interface is used by the ProcessManagerJDialog to retrieve process output
 	/// as it is generated. 
 	/// </summary>
-	public interface ProcessListener
-    {
-        /// <summary>
-        /// ProcessManager will call this method if a line from standard output is read. </summary>
-        /// <param name="output"> A line from the process' standard output. </param>
-        void processOutput(string output);
+	public abstract interface ProcessListener
+	{
+	/// <summary>
+	/// ProcessManager will call this method if a line from standard output is read. </summary>
+	/// <param name="output"> A line from the process' standard output. </param>
+	void processOutput(string output);
 
-        /// <summary>
-        /// ProcessManager will call this method if a line from standard error is read. </summary>
-        /// <param name="error"> A line from the process' standard error. </param>
-        void processError(string error);
+	/// <summary>
+	/// ProcessManager will call this method if a line from standard error is read. </summary>
+	/// <param name="error"> A line from the process' standard error. </param>
+	void processError(string error);
 
-        /// <summary>
-        /// ProcessManager will call this method when the status of the process changes. </summary>
-        /// <param name="code"> If zero, then a normal exit has occurred.  If not zero, assume that
-        /// the process has terminated with an error.  At some point, need to consider how
-        /// to handle pause, interrupt, etc. </param>
-        /// <param name="message"> A string message that can be displayed so that calling code
-        /// does not need to interpret the numeric code. </param>
-        void processStatus(int code, string message);
+	/// <summary>
+	/// ProcessManager will call this method when the status of the process changes. </summary>
+	/// <param name="code"> If zero, then a normal exit has occurred.  If not zero, assume that
+	/// the process has terminated with an error.  At some point, need to consider how
+	/// to handle pause, interrupt, etc. </param>
+	/// <param name="message"> A string message that can be displayed so that calling code
+	/// does not need to interpret the numeric code. </param>
+	void processStatus(int code, string message);
 
-    }
+	}
+
 }

@@ -1,4 +1,6 @@
-﻿// StopWatch - this class provides a way to track execution time similar to a physical stopwatch
+﻿using System;
+
+// StopWatch - this class provides a way to track execution time similar to a physical stopwatch
 
 /* NoticeStart
 
@@ -20,11 +22,11 @@ CDSS Common Java Library is free software:  you can redistribute it and/or modif
     along with CDSS Common Java Library.  If not, see <https://www.gnu.org/licenses/>.
 
 NoticeEnd */
-
 namespace RTi.Util.Time
 {
+    using Message = Message.Message;
 
-	/// <summary>
+    /// <summary>
 	/// This class provides a way to track execution time similar to a physical stopwatch.  To
 	/// use the class, declare an instance and then call "start" and "stop" as necessary
 	/// to add to the time.  Use "clear" to reset the timer to zero.  The time amounts
@@ -35,140 +37,128 @@ namespace RTi.Util.Time
 	/// calls outside of loops, or, if in loops, consider only using if wrapped in
 	/// Message.isDebugOn() checks.
 	/// </summary>
-	public class StopWatch
-	{
+    public class StopWatch
+    {
 
-	/// <summary>
-	/// Total elapsed running time in milliseconds.
-	/// </summary>
-	private long _total_milliseconds;
-	/// <summary>
-	/// Start date for a StopWatch session.
-	/// </summary>
-	private System.DateTime _start_date;
-	/// <summary>
-	/// Indicates if the start time has been set.
-	/// </summary>
-	private bool _start_set;
-	/// <summary>
-	/// Stop date for a StopWatch session.
-	/// </summary>
-	private System.DateTime _stop_date;
+        /**
+        Total elapsed running time in milliseconds.
+        */
+        private double _total_milliseconds;
+        /**
+        Start date for a StopWatch session.
+        */
+        private System.DateTime? _start_date;
+        /**
+        Indicates if the start time has been set.
+        */
+        private bool _start_set;
+        /**
+        Stop date for a StopWatch session.
+        */
+        private System.DateTime? _stop_date;
 
-	/// <summary>
-	/// Constructor and initialize the StopWatch count to zero milliseconds.
-	/// </summary>
-	public StopWatch()
-	{
-		initialize(0);
-	}
+        /// <summary>
+        /// Constructor and initialize the StopWatch count to zero milliseconds.
+        /// </summary>
+        public StopWatch()
+        {
+            initialize(0);
+        }
 
-	/// <summary>
-	/// Construct given an initial time count (for example, use if a second time is
-	/// storing an initial time plus new accumulations of time). </summary>
-	/// <param name="total"> Total time to initialize StopWatch to, milliseconds. </param>
-	public StopWatch(long total)
-	{
-		initialize(total);
-	}
+        /// <summary>
+        /// Construct given an initial time count (for example, use if a second time is
+        /// storing an initial time plus new accumulations of time). </summary>
+        /// <param name="total"> Total time to initialize StopWatch to, milliseconds. </param>
+        public StopWatch(long total)
+        {
+            initialize(total);
+        }
 
-	/// <summary>
-	/// Add the time from another stopwatch to the elapsed time for this stopwatch. </summary>
-	/// <param name="sw"> the StopWatch from which to get additional time. </param>
-	public virtual void add(StopWatch sw)
-	{
-		_total_milliseconds += sw.getMilliseconds();
-	}
+        /// <summary>
+        /// Add the time from another stopwatch to the elapsed time for this stopwatch. </summary>
+        /// <param name="sw"> the StopWatch from which to get additional time. </param>
+        public virtual void add(StopWatch sw)
+        {
+            _total_milliseconds += sw.getMilliseconds();
+        }
 
-	/// <summary>
-	/// Reset the StopWatch to zero.
-	/// </summary>
-	public virtual void clear()
-	{
-		_total_milliseconds = 0;
-	}
+        /// <summary>
+        /// Reset the StopWatch to zero.
+        /// </summary>
+        public virtual void clear()
+        {
+            _total_milliseconds = 0;
+        }
 
-	/// <summary>
-	/// Reset the StopWatch to zero and call start().
-	/// </summary>
-	public virtual void clearAndStart()
-	{
-		_total_milliseconds = 0;
-		start();
-	}
+        /// <summary>
+        /// Reset the StopWatch to zero and call start().
+        /// </summary>
+        public virtual void clearAndStart()
+        {
+            _total_milliseconds = 0;
+            start();
+        }
 
-	/// <summary>
-	/// Finalize before garbage collection.
-	/// </summary>
-//JAVA TO C# CONVERTER WARNING: Method 'throws' clauses are not available in .NET:
-//ORIGINAL LINE: protected void finalize() throws Throwable
-	~StopWatch()
-	{
-		_start_date = null;
-		_stop_date = null;
-	}
+        /// <summary>
+        /// Return the accumulated milliseconds. </summary>
+        /// <returns> The number of milliseconds accumulated in the StopWatch. </returns>
+        public virtual double getMilliseconds()
+        {
+            return _total_milliseconds;
+        }
 
-	/// <summary>
-	/// Return the accumulated milliseconds. </summary>
-	/// <returns> The number of milliseconds accumulated in the StopWatch. </returns>
-	public virtual long getMilliseconds()
-	{
-		return _total_milliseconds;
-	}
+        /// <summary>
+        /// Return the accumulated seconds. </summary>
+        /// <returns> The number of seconds accumulated in the StopWatch (as a double so that
+        /// milliseconds are also reflected). </returns>
+        public virtual double getSeconds()
+        {
+            return (double)_total_milliseconds / (double)1000.0;
+        }
 
-	/// <summary>
-	/// Return the accumulated seconds. </summary>
-	/// <returns> The number of seconds accumulated in the StopWatch (as a double so that
-	/// milliseconds are also reflected). </returns>
-	public virtual double getSeconds()
-	{
-		return (double)_total_milliseconds / (double)1000.0;
-	}
+        /// <summary>
+        /// Initialize StopWatch. </summary>
+        /// <param name="initial"> StopWatch value in milliseconds. </param>
+        private void initialize(long total)
+        {
+            _total_milliseconds = total;
+            _start_date = null;
+            _start_set = false;
+            _stop_date = null;
+        }
 
-	/// <summary>
-	/// Initialize StopWatch. </summary>
-	/// <param name="initial"> StopWatch value in milliseconds. </param>
-	private void initialize(long total)
-	{
-		_total_milliseconds = total;
-		_start_date = null;
-		_start_set = false;
-		_stop_date = null;
-	}
+        /// <summary>
+        /// Start accumulating time in the StopWatch.
+        /// </summary>
+        public virtual void start()
+        {
+            _start_set = true;
+            _start_date = System.DateTime.Now;
+        }
 
-	/// <summary>
-	/// Start accumulating time in the StopWatch.
-	/// </summary>
-	public virtual void start()
-	{
-		_start_set = true;
-		_start_date = System.DateTime.Now;
-	}
+        /// <summary>
+        /// Stop accumulating time in the StopWatch.  This does not clear the StopWatch and
+        /// subsequent calls to "start" can be made to continue adding to the StopWatch.
+        /// </summary>
+        public virtual void stop()
+        {
+            string routine = "Message.stop";
+            _stop_date = System.DateTime.Now;
+            // Compute the difference and add to the elapsed time.
+            if (_start_set)
+            {
+                double add = (_stop_date.Value - _start_date.Value).TotalMilliseconds;
+                _total_milliseconds += add;
+            }
+            _start_set = false;
+        }
 
-	/// <summary>
-	/// Stop accumulating time in the StopWatch.  This does not clear the StopWatch and
-	/// subsequent calls to "start" can be made to continue adding to the StopWatch.
-	/// </summary>
-	public virtual void stop()
-	{
-		_stop_date = System.DateTime.Now;
-		// Compute the difference and add to the elapsed time.
-		if (_start_set)
-		{
-			long add = _stop_date.Ticks - _start_date.Ticks;
-			_total_milliseconds += add;
-		}
-		_start_set = false;
-	}
-
-	/// <summary>
-	/// Print the StopWatch value as seconds.
-	/// </summary>
-	public override string ToString()
-	{
-		return "StopWatch(seconds)=" + getSeconds();
-	}
-
-	}
-
+        /**
+        Print the StopWatch value as seconds.
+        */
+        public string ToString()
+        {
+            return "StopWatch(seconds)=" + getSeconds();
+        }
+    }
 }
