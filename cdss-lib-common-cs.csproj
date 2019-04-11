@@ -15,4 +15,8 @@
     <PackageReference Include="NLog.Config" Version="4.6.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="src\RTi\GIS\" />
+  </ItemGroup>
+
 </Project>

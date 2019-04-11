@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 
 // DateTime - general Date/Time class
@@ -1103,6 +1104,56 @@ namespace RTi.Util.Time
         //  // Does not matter what timezone because internal date/time values are used in absolute sense.
         //    __weekday = getDate(TimeZoneDefaultType.GMT).Day;
         //    return __weekday;
+        //}
+
+        /// <summary>
+        /// Return the Java Date corresponding to the DateTime, using time zone set for the DateTime object.
+        /// This should be called, for example, when the time zone in the object has not been set and it is clear what the default should be. </summary>
+        /// <param name="defaultTimeZone"> indicates how to behave if the time zone is not set in the DateTime object.
+        /// TimeZoneDefaultType.LOCAL should match the legacy behavior, which was relying on the Calendar to set the
+        /// time zone to the default.
+        /// TimeZoneDefaultType.GMT can be used to treat the DateTime as GMT, which is appropriate if time zone is not relevant. </param>
+        /// <returns> Java Date corresponding to the DateTime, ignoring the time zone. </returns>
+        /// <exception cref="RuntimeException"> if there is no time zone set but defaultTimeZone = TimeZoneDefaultType.NONE </exception>
+        //public virtual System.DateTime getDate(TimeZoneDefaultType defaultTimeZone)
+        //{
+        //    GregorianCalendar c = new GregorianCalendar();
+        //    System.DateTime dt = new System.DateTime(__year, (__month - 1), __day, __hour, __minute, __second);
+        //    java.util.TimeZone tz = null;
+        //    if ((!string.ReferenceEquals(__tz, null)) && (__tz.Length > 0))
+        //    {
+        //        // Time zone is specified in object so use it
+        //        // Make sure time zone is recognized in the Java world because if not recognized GMT is assumed
+        //        // Hopefully the following is fast - otherwise will need to create a static array in TimeUtil.
+        //        if (!TimeUtil.isValidTimeZone(__tz))
+        //        {
+        //            // The following will throw an exception in daylight savings time because "MDT" is not a valid time zone
+        //            // (it is a display name for "MST" when in daylight savings)
+        //            throw new Exception("Time zone (" + __tz + ") in DateTime object is invalid.  Cannot determine Java Date.");
+        //        }
+        //        // The following will now work.  Without the above check GMT is returned if the timezone is not found
+        //        tz = java.util.TimeZone.getTimeZone(__tz);
+        //        c.setTimeZone(tz);
+        //    }
+        //    else
+        //    {
+        //        // No time zone in the object so default
+        //        if (defaultTimeZone == TimeZoneDefaultType.LOCAL)
+        //        {
+        //            c.setTimeZone(java.util.TimeZone.getDefault());
+        //        }
+        //        else if (defaultTimeZone == TimeZoneDefaultType.GMT)
+        //        {
+        //            tz = java.util.TimeZone.getTimeZone("GMT");
+        //            c.setTimeZone(tz);
+        //        }
+        //        else if ((defaultTimeZone == null) || (defaultTimeZone == TimeZoneDefaultType.NONE))
+        //        {
+        //            // No default allowed
+        //            throw new Exception("Time zone in DateTime object is blank but default time zone is not allowed.");
+        //        }
+        //    }
+        //    return c.getTime();
         //}
 
         /// <summary>

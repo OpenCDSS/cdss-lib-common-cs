@@ -611,6 +611,34 @@ namespace RTi.Util.Time
         //}
 
         /// <summary>
+        /// Convert a calendar month (1=January,...,12=December) to a month in a special
+        /// calendar.  For example, water years are Oct to Sep.  To determine the month
+        /// number (1+) in a water year given a calendar year month, do the following:
+        /// <pre>
+        /// int month = convertCalendarMonthToSpecialMonth ( cal_month, 10 );
+        /// </pre> </summary>
+        /// <param name="cal_month"> The calendar month (1=January, etc.). </param>
+        /// <param name="first_cal_month_in_year"> The calendar month corresponding to the first
+        /// month in the special calendar.  For example, for water years, specify 10 for October. </param>
+        /// <returns> the month number in the custom calendar (1 to 12). </returns>
+        public static int convertCalendarMonthToCustomMonth(int cal_month, int first_cal_month_in_year)
+        {
+            if (cal_month >= first_cal_month_in_year)
+            {
+                // This is the only clause that is processed for calendar year
+                // and is used for high calendar months in custom calendars.
+                // For example for water year (first_cal_month_in_year = 10), return cal_month - 3
+                return (cal_month - (first_cal_month_in_year - 1));
+            }
+            else
+            {
+                // This will be processed for non-calendar year for early months in the calendar year.
+                // For example for water year, return cal_month + 3
+                return (cal_month + (12 - first_cal_month_in_year + 1));
+            }
+        }
+
+        /// <summary>
         /// Return the absolute month, which is the year*12 + month. </summary>
         /// <returns> The absolute month, which is the year*12 + month. </returns>
         /// <param name="month"> Month number. </param>

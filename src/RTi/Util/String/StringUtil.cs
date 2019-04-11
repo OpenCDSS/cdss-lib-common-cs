@@ -264,24 +264,24 @@ namespace RTi.Util.String
         /// Convert a String to a double. </summary>
         /// <param name="s"> String to convert. </param>
         /// <returns> A double as converted from the String, or 0.0 if a conversion error. </returns>
-        public static double atod(string s)
-        {
-            if (string.ReferenceEquals(s, null))
-            {
-                return 0.0;
-            }
-            double value = 0.0;
-            try
-            {
-                value = (Convert.ToDouble(s.Trim()));
-            }
-            catch (System.FormatException)
-            {
-                Message.printWarning(50, "StringUtil.atod", "Unable to convert \"" + s + "\" to double.");
-                value = 0.0;
-            }
-            return value;
-        }
+        //public static double atod(string s)
+        //{
+        //    if (string.ReferenceEquals(s, null))
+        //    {
+        //        return 0.0;
+        //    }
+        //    double value = 0.0;
+        //    try
+        //    {
+        //        value = (Convert.ToDouble(s.Trim()));
+        //    }
+        //    catch (System.FormatException)
+        //    {
+        //        Message.printWarning(50, "StringUtil.atod", "Unable to convert \"" + s + "\" to double.");
+        //        value = 0.0;
+        //    }
+        //    return value;
+        //}
 
         /*------------------------------------------------------------------------------
 	** HMBreakStringList - get a list of strings from a string
@@ -1882,6 +1882,137 @@ namespace RTi.Util.String
                 v.Add(array[i]);
             }
             return v;
+        }
+
+        /// <summary>
+        /// Remove characters from string. </summary>
+        /// <returns> A string that has been unpadded (whitespace removed from front, back and/or middle). </returns>
+        /// <param name="string"> String to unpad. </param>
+        /// <param name="white0"> Whitespace characters to remove. </param>
+        /// <param name="flag"> Bitmask indicating how to unpad.  Can be
+        /// PAD_FRONT, PAD_BACK, PAD_MIDDLE, PAD_FRONT_BACK, or PAD_FRONT_MIDDLE_BACK. </param>
+        public static string unpad(string @string, string white0, int flag)
+        {
+            int length_string, length_white;
+            string default_white = " \t\n\r", white;
+            StringBuilder buffer;
+
+            // Check for NULL prointers...
+
+            if (string.ReferenceEquals(@string, null))
+            {
+                return @string;
+            }
+
+            // Set default whitespace characters if not specified...
+
+            if (string.ReferenceEquals(white0, null))
+            {
+                white = default_white;
+                length_white = white.Length;
+            }
+            else
+            {
+                length_white = white0.Length;
+                if (length_white == 0)
+                {
+                    white = default_white;
+                    length_white = white.Length;
+                }
+                else
+                {
+                    white = white0;
+                    length_white = white.Length;
+                }
+            }
+
+            length_string = @string.Length;
+            if (length_string == 0)
+            {
+                return @string;
+            }
+
+            int istring;
+            char cstring = '\0';
+
+            // Unpad the whole string...
+
+            if ((flag == StringUtil.PAD_FRONT_MIDDLE_BACK) && (length_string > 0))
+            {
+                buffer = new StringBuilder();
+                for (istring = 0; istring < length_string; istring++)
+                {
+                    cstring = @string[istring];
+                    if (white.IndexOf(cstring) != -1)
+                    {
+                        // Don't transfer the character...
+                        continue;
+                    }
+                    buffer.Append(cstring);
+                }
+                return buffer.ToString();
+            }
+
+            buffer = new StringBuilder(@string);
+
+            // Do the back first so that we do not shift the string yet...
+
+            if (((flag & StringUtil.PAD_BACK) != 0) && (length_string > 0))
+            {
+                // Remove whitespace from back...
+                istring = length_string - 1;
+                if (istring >= 0)
+                {
+                    cstring = @string[istring];
+                    while ((istring >= 0) && (white.IndexOf(cstring) != -1))
+                    {
+                        // Shorten by one character as we backtrack...
+                        --length_string;
+                        if (length_string < 0)
+                        {
+                            length_string = 0;
+                        }
+                        buffer.Length = length_string;
+                        --istring;
+                        if (istring >= 0)
+                        {
+                            cstring = @string[istring];
+                        }
+                    }
+                }
+                //Message.printDebug ( dl, routine, "Result after \"%s\" off back: \"%s\".", white, string );
+            }
+
+            // Now do the front...
+
+            int skip_count = 0;
+            if (((flag & StringUtil.PAD_FRONT) != 0) && (length_string > 0))
+            {
+                // Remove whitespace from front...
+                istring = 0;
+                cstring = @string[istring];
+                while ((istring < length_string) && (white.IndexOf(cstring) != -1))
+                {
+                    // Skipping leading whitespace...
+                    ++skip_count;
+                    ++istring;
+                    if (istring < length_string)
+                    {
+                        cstring = @string[istring];
+                    }
+                }
+                if (skip_count > 0)
+                {
+                    // We need to shift the string...
+                    return (buffer.ToString().Substring(skip_count));
+                }
+                //buffer.append ( string.substring(istring) );
+                //strcpy ( string, pt );
+                //Message.printDebug ( dl, routine, "Result after \"%s\" off front: \"%s\".", white, string );
+            }
+
+            // Else, return the string from the front and back operations...
+            return buffer.ToString();
         }
     }
 }

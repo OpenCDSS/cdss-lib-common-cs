@@ -331,6 +331,7 @@ namespace RTi.TS
 
     using Message = Util.Message.Message;
     using DateTime = Util.Time.DateTime;
+    using TimeInterval = RTi.Util.Time.TimeInterval;
 
     // TODO SAM 2016-01-31 Need to split out calculation methods into helper classes.
     // Should only retain methods here that extend TS basic functionality.
@@ -561,6 +562,92 @@ namespace RTi.TS
             limits.setDate2(new DateTime(end));
             limits.setLimitsFound(true);
             return limits;
+        }
+
+        /// <summary>
+        /// Given a time series identifier as a string, determine the type of time series
+        /// to be allocated and creates a new instance.  Only the interval base and
+        /// multiplier are set (the memory allocation must occur elsewhere).  Time series metadata including the
+        /// identifier are also NOT set. </summary>
+        /// <param name="id"> time series identifier as a string. </param>
+        /// <param name="long_id"> If true, then the string is a full identifier.  Otherwise,
+        /// the string is only the interval (e.g., "10min"). </param>
+        /// <returns> A pointer to the time series, or null if the time series type cannot be determined. </returns>
+        /// <exception cref="if"> the identifier is not valid (e..g, if the interval is not recognized). </exception>
+        //JAVA TO C# CONVERTER WARNING: Method 'throws' clauses are not available in .NET:
+        //ORIGINAL LINE: public static TS newTimeSeries(String id, boolean long_id) throws Exception
+        public static TS newTimeSeries(string id, bool long_id)
+        {
+            int intervalBase = 0;
+            int intervalMult = 0;
+            string intervalString = "";
+            if (long_id)
+            {
+                // Create a TSIdent so that the type of time series can be determined...
+
+                TSIdent tsident = new TSIdent(id);
+
+                // Get the interval and base...
+
+                intervalString = tsident.getInterval();
+                intervalBase = tsident.getIntervalBase();
+                intervalMult = tsident.getIntervalMult();
+            }
+            else
+            {
+                // Parse a TimeInterval so that the type of time series can be determined...
+
+                intervalString = id;
+                TimeInterval tsinterval = TimeInterval.parseInterval(intervalString);
+
+                // Get the interval and base...
+
+                intervalBase = tsinterval.getBase();
+                intervalMult = tsinterval.getMultiplier();
+            }
+            // Now interpret the results and declare the time series...
+
+            TS ts = null;
+            //if (intervalBase == TimeInterval.MINUTE)
+            //{
+            //    ts = new MinuteTS();
+            //}
+            //else if (intervalBase == TimeInterval.HOUR)
+            //{
+            //    ts = new HourTS();
+            //}
+            if (intervalBase == TimeInterval.DAY)
+            {
+                ts = new DayTS();
+            }
+            else if (intervalBase == TimeInterval.MONTH)
+            {
+                ts = new MonthTS();
+            }
+            //else if (intervalBase == TimeInterval.YEAR)
+            //{
+            //    ts = new YearTS();
+            //}
+            //else if (intervalBase == TimeInterval.IRREGULAR)
+            //{
+            //    ts = new IrregularTS();
+            //}
+            else
+            {
+                string message = "Cannot create a new time series for \"" + id + "\" (the interval \"" + intervalString + "\" [" + intervalBase + "] is not recognized).";
+                Message.printWarning(3, "TSUtil.newTimeSeries", message);
+                throw new Exception(message);
+            }
+
+            // Set the multiplier...
+            ts.setDataInterval(intervalBase, intervalMult);
+            ts.setDataIntervalOriginal(intervalBase, intervalMult);
+            // Set the genesis information
+            ts.addToGenesis("Created new time series with interval determined from TSID \"" + id + "\"");
+
+            // Return whatever was created...
+
+            return ts;
         }
     }
 }

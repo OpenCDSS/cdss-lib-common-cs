@@ -1050,6 +1050,34 @@ namespace RTi.TS
         }
 
         /// <summary>
+        /// Set whether the time series is dirty (data have been modified). </summary>
+        /// <param name="dirty"> true if the time series is dirty/edited, false if not. </param>
+        public virtual void setDirty(bool dirty)
+        {
+            _dirty = dirty;
+        }
+
+        /// <summary>
+        /// Set the data interval. </summary>
+        /// <param name="base"> Base interval (see TimeInterval.*). </param>
+        /// <param name="mult"> Base interval multiplier. </param>
+        public virtual void setDataInterval(int @base, int mult)
+        {
+            _data_interval_base = @base;
+            _data_interval_mult = mult;
+        }
+
+        /// <summary>
+        /// Set the data interval for the original data. </summary>
+        /// <param name="base"> Base interval (see TimeInterval.*). </param>
+        /// <param name="mult"> Base interval multiplier. </param>
+        public virtual void setDataIntervalOriginal(int @base, int mult)
+        {
+            _data_interval_base_original = @base;
+            _data_interval_mult_original = mult;
+        }
+
+        /// <summary>
         /// Set the data units. </summary>
         /// <param name="data_units"> Data units abbreviation. </param>
         /// <seealso cref= RTi.Util.IO.DataUnits </seealso>
